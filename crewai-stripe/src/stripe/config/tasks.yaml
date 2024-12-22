@@ -1,0 +1,47 @@
+analyze_request_task:
+  description: >
+    Analyze the following user query and extract payment requirements:
+    "{query}"
+    
+    Determine:
+    1. Type of operation:
+       - If contains "payment link" or "create a payment link": payment_link type
+       - If contains "pay to", "send", or "transfer": connect_payment type
+    2. For payment_link:
+       - Product name
+       - Payment amount
+    3. For connect_payment:
+       - Account ID (must start with acct_)
+       - Payment amount
+    
+    Return the information in JSON format:
+    For payment_link: {"type": "payment_link", "product": "name", "amount": number}
+    For connect_payment: {"type": "connect_payment", "account_id": "acct_*", "amount": number}
+  expected_output: >
+    A JSON object containing the parsed payment details.
+  agent: payment_manager
+
+create_payment_link_task:
+  description: >
+    Create a Stripe payment link for the product "{product_name}" at ${amount}.
+    
+    Steps:
+    1. Create a Stripe product with the given name
+    2. Create a price for the product with the specified amount
+    3. Generate a payment link for one-time purchase
+  expected_output: >
+    A Stripe payment link URL for immediate use.
+  agent: payment_manager
+
+process_connect_payment_task:
+  description: >
+    Process a Stripe Connect payment of ${amount} to account {account_id}.
+    
+    Steps:
+    1. Verify the destination account exists
+    2. Create test customer and payment method
+    3. Process the payment with proper transfer data
+    4. Return the payment intent ID or client secret
+  expected_output: >
+    A confirmed payment intent ID or client secret.
+  agent: payment_manager
