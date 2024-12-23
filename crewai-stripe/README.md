@@ -7,8 +7,8 @@ This is the Lambda function for the Stripe Payment Processing Crew.
 ## Build the Docker image
 `docker build -t stripe-payment-processing-crew .`
 
-## Run the Docker image
-`docker run -p 9000:8080 stripe-payment-processing-crew`
+## Run the Docker image (for testing only)
+`docker run -p 9000:9000 stripe-payment-processing-crew`
 
 `python test_docker.py`
 
