@@ -1,4 +1,4 @@
-# Use the official AWS Lambda Python base image
+# Use the official AWS Lambda Python base image -- perhaps we should use 3.13?
 FROM public.ecr.aws/lambda/python:3.12
 
 # Set the working directory
@@ -7,7 +7,7 @@ WORKDIR /var/task
 # Copy the project files into the container
 COPY . .
 
-# Install Poetry
+# Install requirements
 RUN pip install -r requirements.txt
 
 RUN crewai install

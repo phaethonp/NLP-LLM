@@ -9,7 +9,7 @@ url = "http://localhost:9000/2015-03-31/functions/function/invocations" # Set to
 # Create the payload with the desired query
 payload = {
     "body": json.dumps({
-        "query": "Create a payment link for 'lawn mowing' for $10"
+        "query": "Create a payment link for 'lawn mowing' for $10" # Easy example query
     })
 }
 
