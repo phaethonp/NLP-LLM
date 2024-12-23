@@ -1,0 +1,18 @@
+{
+  "body": {
+    "query": "Pay $50 to account acct_xxxxxx",
+    "customer": {
+      "id": "cus_1234567890",
+      "payment_method_id": "tok_visa",
+      "name": "John Doe",
+      "email": "john@example.com",
+      "phone": "+1234567890",
+      "address": {
+        "line1": "123 Main St",
+        "city": "San Francisco",
+        "state": "CA",
+        "postal_code": "94105"
+      }
+    }
+  }
+}

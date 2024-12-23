@@ -4,13 +4,21 @@
 
 This is the Lambda function for the Stripe Payment Processing Crew.
 
-## Build the Docker image
+## Build the Docker image 
 `docker build -t stripe-payment-processing-crew .`
 
-## Run the Docker image (for testing only)
-`docker run -p 9000:9000 stripe-payment-processing-crew`
 
-`python test_docker.py`
+## Run the Docker image (for testing only)
+`docker run -p 9000:8080 stripe-payment-processing-crew`
+
+## Install dependencies for tests
+`pip install -r tests/requirements.txt`
+
+## Run test
+`python tests/test_stripeui.py`
+
+This will start a flask server on port 5000, which you can test the Local Lambda function with.
+
 
 
 ## Deploy the Lambda function

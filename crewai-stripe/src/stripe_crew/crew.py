@@ -96,7 +96,7 @@ class StripeCrew:
 			agent=self.manager
 		)
 
-	def process_connect_payment(self, account_id: str, amount: float) -> str:
+	def process_connect_payment(self, account_id: str, amount: float, customer_data: Optional[Dict] = None) -> str:
 		"""Process a payment to a connected account."""
 		try:
 			# Verify the account exists
@@ -105,33 +105,61 @@ class StripeCrew:
 			except stripe.error.StripeError:
 				raise ValueError(f"Invalid or non-existent account ID: {account_id}")
 
-			# Create a customer and payment method;
-			# This is a temporary customer and payment method for testing purposes.
-			# In the future, we will need to use a real customer and payment method, provided from lambda.
-			customer = stripe.Customer.create(
-				name="Test Customer",
-				email="test@example.com"
-			)
+			# Use provided customer if available, otherwise create a test customer
+			if customer_data and 'id' in customer_data and 'payment_method_id' in customer_data:
+				customer_id = customer_data['id']
+				payment_method_id = customer_data['payment_method_id']
+				logger.info(f"Using provided customer {customer_id} with payment method {payment_method_id}")
+				
+				# Update customer with any new information if provided
+				if any(key in customer_data for key in ['name', 'email', 'phone', 'address']):
+					update_data = {}
+					for field in ['name', 'email', 'phone', 'address']:
+						if field in customer_data:
+							update_data[field] = customer_data[field]
+					if 'description' in customer_data:
+						update_data['description'] = customer_data['description']
+					
+					stripe.Customer.modify(
+						customer_id,
+						**update_data
+					)
+					logger.info(f"Updated customer {customer_id} with new information")
+			else:
+				logger.info("No customer data provided, creating test customer")
+				customer = stripe.Customer.create(
+					name="Test Customer",
+					email="test@example.com",
+					description="Test customer created by Stripe crew",
+					metadata={'source': 'stripe_crew_test'}
+				)
+				payment_method = stripe.PaymentMethod.create(
+					type="card",
+					card={"token": "tok_visa"},
+					billing_details={
+						"name": "Test Customer",
+						"email": "test@example.com"
+					}
+				)
+				stripe.PaymentMethod.attach(payment_method.id, customer=customer.id)
+				customer_id = customer.id
+				payment_method_id = payment_method.id
 			
-			payment_method = stripe.PaymentMethod.create(
-				type="card",
-				card={"token": "tok_visa"},
-				billing_details={"name": "Test Customer", "email": "test@example.com"}
-			)
-			# Here, we would need to change this payment_method variable to be a real, user PaymentMethod object.	
-			stripe.PaymentMethod.attach(payment_method.id, customer=customer.id)
-			
-			# Process payment
+			# Process payment with additional metadata
 			payment_intent = stripe.PaymentIntent.create(
 				amount=int(amount * 100),
 				currency="usd",
-				customer=customer.id,
-				payment_method=payment_method.id,
+				customer=customer_id,
+				payment_method=payment_method_id,
 				off_session=True,
 				confirm=True,
-				
 				transfer_data={'destination': account_id},
-				metadata={'payment_type': 'connect', 'recipient_account': account_id}
+				metadata={
+					'payment_type': 'connect',
+					'recipient_account': account_id,
+					'source': 'stripe_crew',
+					'customer_email': customer_data.get('email') if customer_data else 'test@example.com'
+				}
 			)
 			
 			return payment_intent.id if payment_intent.status == "succeeded" else payment_intent.client_secret
@@ -140,23 +168,47 @@ class StripeCrew:
 			logger.error(f"Failed to process connect payment: {str(e)}")
 			raise
 
-	def create_payment_link(self, product_name: str, amount_cents: int) -> str:
+	def create_payment_link(self, product_name: str, amount_cents: int, customer_data: Optional[Dict] = None) -> str:
 		"""Create a new payment link."""
 		try:
+			metadata = {
+				'source': 'stripe_crew',
+				'created_by': 'payment_crew'
+			}
+			
+			# Add customer information to metadata if available
+			if customer_data:
+				metadata.update({
+					'customer_id': customer_data.get('id', ''),
+					'customer_email': customer_data.get('email', ''),
+					'customer_name': customer_data.get('name', '')
+				})
+			
 			product = stripe.Product.create(
 				name=product_name,
-				description=f"{product_name} - One-time purchase"
+				description=f"{product_name} - One-time purchase",
+				metadata=metadata
 			)
 			
 			price = stripe.Price.create(
 				product=product.id,
 				unit_amount=amount_cents,
-				currency="usd"
+				currency="usd",
+				metadata=metadata
 			)
 			
-			payment_link = stripe.PaymentLink.create(
-				line_items=[{"price": price.id, "quantity": 1}]
-			)
+			payment_link_data = {
+				'line_items': [{"price": price.id, "quantity": 1}],
+				'metadata': metadata
+			}
+			
+			# Add customer prefill if available
+			if customer_data:
+				payment_link_data['customer_creation'] = 'always'
+				payment_link_data['automatic_tax'] = {'enabled': True}
+				payment_link_data['customer_email'] = customer_data.get('email')
+				
+			payment_link = stripe.PaymentLink.create(**payment_link_data)
 			
 			return payment_link.url
 			
@@ -172,6 +224,21 @@ class StripeCrew:
 			return "Error: Invalid payment request"
 
 		try:
+			# Extract customer data if available in crew_inputs
+			customer_data = None
+			if isinstance(self.crew_inputs, dict):
+				body = self.crew_inputs.get('body', '{}')
+				if isinstance(body, str):
+					body = json.loads(body)
+				customer_data = body.get('customer')
+				if customer_data:
+					logger.info(f"Found customer data in request: {customer_data}")
+					# Validate required customer fields
+					required_fields = ['id', 'payment_method_id', 'email']
+					missing_fields = [field for field in required_fields if field not in customer_data]
+					if missing_fields:
+						logger.warning(f"Missing required customer fields: {missing_fields}")
+
 			# Parse request
 			parse_crew = Crew(
 				agents=[self.manager],
@@ -185,10 +252,10 @@ class StripeCrew:
 			
 			# Process payment based on type
 			if data['type'] == 'connect_payment':
-				payment_id = self.process_connect_payment(data['account_id'], data['amount'])
+				payment_id = self.process_connect_payment(data['account_id'], data['amount'], customer_data)
 				return f"SUCCESS: {payment_id}"
 			elif data['type'] == 'payment_link':
-				payment_link = self.create_payment_link(data['product'], int(data['amount'] * 100))
+				payment_link = self.create_payment_link(data['product'], int(data['amount'] * 100), customer_data)
 				return f"SUCCESS: {payment_link}"
 			else:
 				return "Error: Invalid payment type"
