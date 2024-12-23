@@ -1,0 +1,4 @@
+crewai==0.86.0
+stripe-agent-toolkit==0.2.0
+stripe==11.4.1
+python-dotenv==1.0.1
