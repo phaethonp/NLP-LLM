@@ -1,40 +1,26 @@
-# Stripe Payment Agent
-
-## Overview
-This is a stripe Payment agent that can create payment links and connect payments.
-It uses a default customer and test payment method for testing purposes.
-You can ask the agent to create a payment link, or transfer a payment to an account(give the account id). 
-
-## Usage
-
-Fill .env with the appropriate information:
-
-```
-MODEL=provider/model_name 
-PROVIDER_API_KEY="your_api_key"
-STRIPE_API_KEY="your_stripe_api_key"
-```
-These were tested using Groq, as it's free API is sufficient. Model tested was llama-3.3-70b-versatile.
+# Stripe Payment Processing Crew -- Lambda
 
 
-## Running the agent
 
-Set up a virtual environment:
+This is the Lambda function for the Stripe Payment Processing Crew.
 
-```
-conda create -n crew python=3.12
-conda activate crew
-```
+## Build the Docker image
+`docker build -t stripe-payment-processing-crew .`
 
-Install crewai:
+## Run the Docker image
+`docker run -p 9000:8080 stripe-payment-processing-crew`
 
-``` 
-pip install crewai
-```
+`python test_docker.py`
 
-Run the agent:
 
-```
-crewai run
-```
+## Deploy the Lambda function
+`aws configure` 
 
+`aws ecr create-repository --repository-name stripe-payment-processing-crew --region your-region`
+
+`aws ecr get-login-password --region your-region | docker login --username AWS --password-stdin 123456789012.dkr.ecr.your-region.amazonaws.com`
+
+`docker tag stripe-payment-processing-crew:latest 123456789012.dkr.ecr.your-region.amazonaws.com/stripe-payment-processing-crew:latest`
+here 123456789012 is your AWS account number
+
+`docker push 123456789012.dkr.ecr.your-region.amazonaws.com/stripe-payment-processing-crew:latest`

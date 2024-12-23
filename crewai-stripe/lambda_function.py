@@ -1,5 +1,9 @@
 import json
 import os
+
+# Override the HOME environment variable
+os.environ['HOME'] = '/tmp'
+
 from typing import Dict, Any
 import logging
 import sys
@@ -11,7 +15,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-from src.stripe.crew import StripeCrew
+from src.stripe_crew.crew import StripeCrew
 
 def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     """
