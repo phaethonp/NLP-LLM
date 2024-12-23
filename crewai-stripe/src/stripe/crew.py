@@ -105,7 +105,9 @@ class StripeCrew:
 			except stripe.error.StripeError:
 				raise ValueError(f"Invalid or non-existent account ID: {account_id}")
 
-			# Create a customer and payment method
+			# Create a customer and payment method;
+			# This is a temporary customer and payment method for testing purposes.
+			# In the future, we will need to use a real customer and payment method, provided from lambda.
 			customer = stripe.Customer.create(
 				name="Test Customer",
 				email="test@example.com"
@@ -116,7 +118,7 @@ class StripeCrew:
 				card={"token": "tok_visa"},
 				billing_details={"name": "Test Customer", "email": "test@example.com"}
 			)
-			
+			# Here, we would need to change this payment_method variable to be a real, user PaymentMethod object.	
 			stripe.PaymentMethod.attach(payment_method.id, customer=customer.id)
 			
 			# Process payment
