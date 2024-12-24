@@ -1,0 +1,7 @@
+.env
+__pycache__/
+.venv/
+uv.lock
+src/stripe/__pycache__/
+package/
+db/
