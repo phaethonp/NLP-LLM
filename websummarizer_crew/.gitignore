@@ -2,6 +2,6 @@
 __pycache__/
 .venv/
 uv.lock
-src/stripe/__pycache__/
+src/websummarizeragent/__pycache__/
 package/
 db/

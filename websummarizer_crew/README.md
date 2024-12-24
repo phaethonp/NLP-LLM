@@ -1,104 +1,49 @@
-# Web Summarizer Lambda Function with Stripe Integration
+# Testing the web summarizer agent with billing.
 
-This Lambda function provides a web page summarization service with Stripe payment integration. It charges $5 per summary and uses CrewAI agents to process payments and generate summaries.
+## Setup
 
-## Features
-
-- Web page content summarization using Selenium
-- Stripe payment integration ($5 per summary)
-- CrewAI agents for payment processing and content summarization
-- AWS Lambda deployment ready with Docker
-
-## Prerequisites
-
-- AWS Account
-- Stripe Account
-- Docker installed locally
-
-## Environment Variables
-
-Create a `.env` file with the following variables:
+Git clone the repo. Then, create a fill called .env in the root of the project with the following content:
 
 ```
-STRIPE_SECRET_KEY=your_stripe_secret_key
-OPENAI_API_KEY=your_openai_api_key
+STRIPE_API_KEY=your_stripe_api_key
+MODEL=modelprovider/modelname
+PROVIDER_API_KEY=your_provider_api_key 
+```
+This was tested with MODEL=groq/llama-3-8b-instant. It doesn't require an API key for Embeddings, as this runs it locally--which will be changed.
+
+## Building the docker image
+
+
+Make sure you're in the root of the project, where the Dockerfile is located. Then run:
+```
+docker build -t web-summarizer .
 ```
 
-## Local Development
+## Running the docker image
 
-1. Install dependencies:
-```bash
-pip install -r requirements.txt
 ```
-
-2. Run tests:
-```bash
-python -m pytest tests/
+docker run -p 9000:8080 web-summarizer
 ```
+Now, you have this server running, which is emulating a Lambda function locally. 
 
-## Docker Build and Deployment
+## Testing the server
 
-1. Build the Docker image:
-```bash
-docker build -t web-summarizer-lambda .
-```
+`pip install -r tests/requirements.txt`
 
-2. Test locally:
-```bash
-docker run -p 9000:8080 web-summarizer-lambda
-```
+`python tests/test_webui.py`
 
-3. Push to AWS ECR:
-```bash
-aws ecr get-login-password --region region | docker login --username AWS --password-stdin account.dkr.ecr.region.amazonaws.com
-docker tag web-summarizer-lambda:latest account.dkr.ecr.region.amazonaws.com/web-summarizer-lambda:latest
-docker push account.dkr.ecr.region.amazonaws.com/web-summarizer-lambda:latest
-```
+Now, open your web browser to localhost:5000, and you will see a web UI. Enter a URL, and enter your payment information, and click, and you will see a summary of the page.
 
-## API Usage
+## Billing
+Use a stripe test API key. Use a test card number, such as 4242 4242 4242 4242. Any CVV Number, and any future date will work. 
 
-Send a POST request to the Lambda function endpoint:
-
-```json
-{
-    "body": {
-        "url": "https://example.com/page-to-summarize",
-        "customer": {
-            "id": "cus_xxx",
-            "payment_method_id": "pm_xxx",
-            "email": "customer@example.com"
-        }
-    }
-}
-```
-
-Response format:
-
-```json
-{
-    "success": true,
-    "summary": "Three key points from the webpage...",
-    "payment_intent": "pi_xxx"
-}
-```
-
-## Architecture
-
-The service uses two CrewAI agents:
-1. Billing Agent: Handles Stripe payment processing
-2. Web Summarizer Agent: Extracts and summarizes web content
-
-The process is sequential:
-1. Payment is processed first
-2. Upon successful payment, the web content is summarized
-3. Summary is returned to the customer
-
-## Error Handling
-
-The service handles various error cases:
-- Invalid input validation
-- Payment processing errors
-- Web scraping failures
-- Content summarization issues
-
-All errors are properly logged and returned with appropriate HTTP status codes.
+## TODO:
+- Update Docker build process to handle environment variables more securely instead of baking them into the image
+- Determine LLM/Embeddings provider strategy:
+  - Option 1: Boostt-provided API keys (centralized)
+  - Option 2: Agent developer-provided API keys (decentralized)
+- Implement chosen API key strategy:
+  - If centralized: Hard-code Boostt API credentials
+  - If decentralized: Add frontend UI for developers to input their model API keys
+  - Update Lambda to receive and use provided credentials
+- As is, there is a memory limit of 3000Mb, which if exceeded will crash the server (This happens on some websites, not others). This is because the model is running locally, must be changed.
