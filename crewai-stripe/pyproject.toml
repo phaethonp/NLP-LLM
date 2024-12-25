@@ -12,11 +12,11 @@ dependencies = [
 ]
 
 [project.scripts]
-stripe-crew = "src.stripe.main:run"
-run_crew = "src.stripe.main:run"
-train = "src.stripe.main:train"
-replay = "src.stripe.main:replay"
-test = "src.stripe.main:test"
+stripe-crew = "src.stripe_crew.main:run"
+run_crew = "src.stripe_crew.main:run"
+train = "src.stripe_crew.main:train"
+replay = "src.stripe_crew.main:replay"
+test = "src.stripe_crew.main:test"
 
 [build-system]
 requires = ["hatchling"]

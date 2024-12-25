@@ -4,7 +4,7 @@ import os
 import sys
 from typing import Optional, Dict
 
-from src.stripe.crew import StripeCrew
+from src.stripe_crew.crew import StripeCrew
 
 load_dotenv()
 
