@@ -1,0 +1,25 @@
+process_payment_task:
+  description: >
+    Process a payment of $5.00 for the web summarization service.
+    
+    Steps:
+    1. Verify customer information is complete
+    2. Process the payment using the provided payment method
+    3. Confirm the payment was successful
+    4. Return the payment intent ID
+  expected_output: >
+    A confirmed payment intent ID or error message.
+  agent: billing_agent
+
+summarize_webpage_task:
+  description: >
+    Analyze and summarize the content from the provided URL: {url}
+    
+    Requirements:
+    1. Extract the main content using the SeleniumScrapingTool
+    2. Identify the three most important points from the content
+    3. Create a clear, concise summary
+    4. Format the output as a bulleted list
+  expected_output: >
+    A summary containing exactly three key points from the webpage.
+  agent: web_summarizer_agent 

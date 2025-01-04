@@ -1,0 +1,7 @@
+.env
+__pycache__/
+.venv/
+uv.lock
+src/websummarizeragent/__pycache__/
+package/
+db/
